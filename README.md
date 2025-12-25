@@ -1,4 +1,4 @@
-# Heating Control System (Humidex v2)
+# Heating Control System
 
 A sophisticated Node-RED flow for intelligent heating automation in Home Assistant, featuring adaptive learning, Humidex-based comfort control, and multi-room scheduling.
 
@@ -386,3 +386,4 @@ This project is open source and available for personal and commercial use. Pleas
 **Built with ❤️ for the Home Assistant community**
 
 *Star this repo if you find it useful! Pull requests welcome!*
+
