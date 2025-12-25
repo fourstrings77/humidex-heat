@@ -1,0 +1,600 @@
+[
+    {
+        "id": "fcf1a8e2d668cc6b",
+        "type": "tab",
+        "label": "Heizungssteuerung (Humidex v2)",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "fcaffd03832d3412",
+        "type": "inject",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Config & Init",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "action",
+                "v": "INIT",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"default_schedules\":{\"weekday\":{\"humidex_target\":17,\"humidex_hysteresis\":1},\"weekend\":{\"humidex_target\":18,\"humidex_hysteresis\":1}},\"rooms\":{\"schlafzimmer\":{\"adaptive_learning\":false,\"schedules\":[{\"start\":\"21:00\",\"end\":\"23:59\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":22,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_sz\",\"temp_sensor\":\"sensor.zb_thermo_parents_temperature\",\"humidity_sensor\":\"sensor.zb_thermo_parents_humidity\",\"window_sensor\":\"binary_sensor.zb_window_schlafzimmer_contact\"},\"kinderzimmer\":{\"adaptive_learning\":true,\"schedules\":[{\"start\":\"06:00\",\"end\":\"08:00\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":21,\"humidex_hysteresis\":1},{\"start\":\"18:00\",\"end\":\"23:00\",\"days\":[1,2,3,4,5,6,0],\"humidex_target\":22,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_children\",\"temp_sensor\":\"sensor.zb_thermo_children_temperature\",\"humidity_sensor\":\"sensor.zb_thermo_children_humidity\",\"window_sensor\":\"binary_sensor.zb_window_kinderzimmer_contact\"},\"Bad\":{\"adaptive_learning\":true,\"schedules\":[{\"start\":\"06:00\",\"end\":\"08:00\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":21,\"humidex_hysteresis\":1},{\"start\":\"17:00\",\"end\":\"21:00\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":21,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_bad\",\"temp_sensor\":null,\"humidity_sensor\":null,\"window_sensor\":\"binary_sensor.zb_window_bad_contact\"},\"Spielzimmer\":{\"adaptive_learning\":true,\"schedules\":[{\"start\":\"14:00\",\"end\":\"19:00\",\"days\":[0,1,2,3,4],\"humidex_target\":22,\"humidex_hysteresis\":1},{\"start\":\"14:00\",\"end\":\"19:00\",\"days\":[5,6],\"humidex_target\":22,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_play\",\"temp_sensor\":\"sensor.zb_thermo_office_temperature\",\"humidity_sensor\":\"sensor.zb_thermo_office_humidity\",\"window_sensor\":\"binary_sensor.zb_window_office_contact\"}}}",
+        "payloadType": "json",
+        "x": 90,
+        "y": 260,
+        "wires": [
+            [
+                "d8c73eb35aa5a6d1"
+            ]
+        ]
+    },
+    {
+        "id": "d8c73eb35aa5a6d1",
+        "type": "function",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Store API",
+        "func": "const STORE_KEY = 'heating_store';\nconst ROOM_LOOKUP_KEY = \"room_by_heater\";\n\nconst ACTION = msg.action || 'INIT';\nconst payload = msg.payload || {};\n\nfunction now() { return new Date().toISOString(); }\n\nfunction updateLookup(store) {\n    const lookup = {};\n    for (const [roomId, room] of Object.entries(store.rooms)) {\n        if (room.heater_entity) lookup[room.heater_entity] = roomId;\n        if (room.temp_sensor) lookup[room.temp_sensor] = roomId;\n        if (room.humidity_sensor) lookup[room.humidity_sensor] = roomId;\n        if (room.window_sensor) lookup[room.window_sensor] = roomId;\n    }\n    flow.set(ROOM_LOOKUP_KEY, lookup);\n}\n\nswitch (ACTION) {\n    case 'INIT':\n        for (const room of Object.values(payload.rooms)) {\n            if (!room.state) {\n                room.state = { \n                    heating: 'off', \n                    toggles: 0, \n                    learned_overshoot: 0, \n                    lastChange: now(),\n                    window_open_since: null,\n                    manual_override: null\n                };\n            }\n        }\n        flow.set(STORE_KEY, payload);\n        updateLookup(payload);\n        node.status({fill:\"green\",shape:\"dot\",text:\"Store Ready\"});\n        break;\n\n    case 'UPDATE_ROOM_STATE':\n        const store = flow.get(STORE_KEY);\n        if (store && store.rooms[payload.roomId]) {\n            const room = store.rooms[payload.roomId];\n            if (room.state.heating !== payload.state.heating) {\n                room.state.toggles++;\n            }\n            room.state = { ...room.state, ...payload.state, lastChange: now() };\n            flow.set(STORE_KEY, store);\n        }\n        break;\n\n    case 'EVENT_MESSAGE':\n        // payload: { entityId, type, value }\n        const storeEv = flow.get(STORE_KEY);\n        const lookup = flow.get(ROOM_LOOKUP_KEY);\n        if (!storeEv || !lookup) break;\n\n        const roomId = lookup[payload.entityId];\n        if (!roomId) break;\n\n        const roomEv = storeEv.rooms[roomId];\n        switch(payload.type) {\n            case 'window':\n                roomEv.state.window_open_since = payload.value === 'on' ? Date.now() : null;\n                break;\n            case 'manual_setpoint':\n                roomEv.state.manual_override = payload.value;\n                break;\n            default:\n                break;\n        }\n        flow.set(STORE_KEY, storeEv);\n        break;\n\n    case 'TICK':\n        const config = flow.get(STORE_KEY);\n        if (!config) return null;\n        const poll = [];\n        for (const [id, r] of Object.entries(config.rooms)) {\n            poll.push({ type: 'temperature', roomId: id, entityId: r.temp_sensor });\n            poll.push({ type: 'humidity', roomId: id, entityId: r.humidity_sensor });\n            poll.push({ type: 'window', roomId: id, entityId: r.window_sensor });\n            poll.push({ type: 'manual_setpoint', roomId: id, entityId: r.heater_entity });\n        }\n        return [null, { payload: poll }];\n\n    case 'DUMP_STORE':\n        node.warn(flow.get(STORE_KEY));\n        return null;\n}\n\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 200,
+        "wires": [
+            [],
+            [
+                "fa235bb0d7dce24a"
+            ]
+        ]
+    },
+    {
+        "id": "fa235bb0d7dce24a",
+        "type": "function",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Message Dispatcher",
+        "func": "const messages = msg.payload;\nreturn [\n    messages.filter(m => m.type === 'temperature'),\n    messages.filter(m => m.type === 'humidity'),\n    messages.filter(m => m.type === 'window'),\n    messages.filter(m => m.type === 'manual_setpoint')\n];",
+        "outputs": 4,
+        "x": 520,
+        "y": 140,
+        "wires": [
+            [
+                "cec9d2d182875986"
+            ],
+            [
+                "1e1892601b3a3e30"
+            ],
+            [
+                "bef394a04d37e90a"
+            ],
+            [
+                "1f5c0997150847bf"
+            ]
+        ]
+    },
+    {
+        "id": "cec9d2d182875986",
+        "type": "api-current-state",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Poll Temp",
+        "server": "f661c5bc79190e5c",
+        "version": 3,
+        "outputs": 1,
+        "halt_if": "",
+        "halt_if_type": "str",
+        "entity_id": "{{entityId}}",
+        "state_type": "str",
+        "blockInputOverrides": false,
+        "outputProperties": [
+            {
+                "property": "payload",
+                "propertyType": "msg",
+                "value": "string",
+                "valueType": "entityState"
+            }
+        ],
+        "for": "",
+        "forType": "num",
+        "x": 740,
+        "y": 80,
+        "wires": [
+            [
+                "0d8cd1fd0c26ff2a"
+            ]
+        ]
+    },
+    {
+        "id": "1e1892601b3a3e30",
+        "type": "api-current-state",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Poll Hum",
+        "server": "f661c5bc79190e5c",
+        "version": 3,
+        "outputs": 1,
+        "halt_if": "",
+        "halt_if_type": "str",
+        "entity_id": "{{entityId}}",
+        "state_type": "str",
+        "blockInputOverrides": false,
+        "outputProperties": [
+            {
+                "property": "payload",
+                "propertyType": "msg",
+                "value": "string",
+                "valueType": "entityState"
+            }
+        ],
+        "for": "",
+        "forType": "num",
+        "x": 740,
+        "y": 130,
+        "wires": [
+            [
+                "0d8cd1fd0c26ff2a"
+            ]
+        ]
+    },
+    {
+        "id": "bef394a04d37e90a",
+        "type": "api-current-state",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Poll Window",
+        "server": "f661c5bc79190e5c",
+        "version": 3,
+        "outputs": 1,
+        "halt_if": "",
+        "halt_if_type": "str",
+        "entity_id": "{{entityId}}",
+        "state_type": "str",
+        "blockInputOverrides": false,
+        "outputProperties": [
+            {
+                "property": "payload",
+                "propertyType": "msg",
+                "value": "string",
+                "valueType": "entityState"
+            }
+        ],
+        "for": "",
+        "forType": "num",
+        "x": 740,
+        "y": 180,
+        "wires": [
+            [
+                "0d8cd1fd0c26ff2a"
+            ]
+        ]
+    },
+    {
+        "id": "1f5c0997150847bf",
+        "type": "api-current-state",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Poll Manual",
+        "server": "f661c5bc79190e5c",
+        "version": 3,
+        "outputs": 1,
+        "halt_if": "",
+        "halt_if_type": "str",
+        "entity_id": "{{entityId}}",
+        "state_type": "str",
+        "blockInputOverrides": false,
+        "outputProperties": [
+            {
+                "property": "payload",
+                "propertyType": "msg",
+                "value": "string",
+                "valueType": "entityState"
+            }
+        ],
+        "for": "",
+        "forType": "num",
+        "x": 740,
+        "y": 230,
+        "wires": [
+            [
+                "0d8cd1fd0c26ff2a"
+            ]
+        ]
+    },
+    {
+        "id": "0d8cd1fd0c26ff2a",
+        "type": "function",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Smart Normalizer",
+        "func": "const roomId = msg.roomId;\nconst type = msg.type;\nlet val = msg.payload;\n\nlet store = flow.get('heating_store');\nif (!store || !store.rooms[roomId]) return null;\n\nif (type === 'window') val = (val === 'on' || val === 'open');\nelse val = parseFloat(val);\n\nstore.rooms[roomId].state[type] = val;\nstore.rooms[roomId].state.lastUpdate = new Date().toISOString();\nflow.set('heating_store', store);\n\nconst st = store.rooms[roomId].state;\nif (st.temperature !== undefined && st.humidity !== undefined) {\n    msg.payload = {\n        roomId: roomId,\n        temperature: st.temperature,\n        humidity: st.humidity,\n        windowOpen: st.window || false,\n        manual_setpoint: st.manual_setpoint,\n        config: store.rooms[roomId],\n        default_schedules: store.default_schedules\n    };\n    return msg;\n}\nreturn null;",
+        "outputs": 1,
+        "x": 970,
+        "y": 200,
+        "wires": [
+            [
+                "ad13caeeafb35d6c"
+            ]
+        ]
+    },
+    {
+        "id": "ad13caeeafb35d6c",
+        "type": "function",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Heating Controller",
+        "func": "const d = msg.payload;\nconst room = d.config;\nconst now = new Date();\n\n// =====================\n// Konstanten\n// =====================\nconst WINDOW_GRACE_MS = 2 * 60 * 1000;\n\n// =====================\n// Sensor-Handling\n// =====================\nconst hasExternalSensors =\n    d.temperature !== null &&\n    d.temperature !== undefined &&\n    d.humidity !== null &&\n    d.humidity !== undefined;\n\nlet temp, hum, currentVal;\n\nif (hasExternalSensors) {\n    temp = d.temperature;\n    hum = d.humidity;\n\n    const dewPoint = temp - ((100 - hum) / 5);\n    const e = 6.112 * Math.pow(10, (7.5 * dewPoint) / (237.7 + dewPoint));\n    currentVal = Math.round((temp + 0.5555 * (e - 10)) * 10) / 10;\n} else {\n    temp = d.manual_setpoint; // Thermostat-eigener Wert\n    currentVal = temp;\n}\n\n// =====================\n// Zeit / Schedule\n// =====================\nconst currentDay = now.getDay();\nconst currentMin = now.getHours() * 60 + now.getMinutes();\n\nfunction getActiveSchedule() {\n    const parseT = (t) => {\n        const [h, m] = t.split(\":\").map(Number);\n        return h * 60 + m;\n    };\n\n    return (room.schedules || [])\n        .filter(s => {\n            if (!s.days.includes(currentDay)) return false;\n            const start = parseT(s.start);\n            const end = parseT(s.end);\n            return start < end\n                ? currentMin >= start && currentMin < end\n                : currentMin >= start || currentMin < end;\n        })\n        .sort((a, b) => b.humidex_target - a.humidex_target)[0] || null;\n}\n\nconst activeSched =\n    getActiveSchedule() ||\n    (currentDay % 6 === 0\n        ? d.default_schedules.weekend\n        : d.default_schedules.weekday);\n\nlet target = activeSched.humidex_target;\nconst hyst = activeSched.humidex_hysteresis || 1;\n\n// =====================\n// Manual Override\n// =====================\nconst manual = d.manual_setpoint;\nconst isControlCmd = manual === 30 || manual === 5;\n\nlet reason = \"schedule_active\";\nlet manualOverride = false;\n\nif (!isControlCmd && Math.abs(manual - target) > (hyst + 0.5)) {\n    target = manual;\n    reason = \"MANUAL_OVERRIDE\";\n    manualOverride = true;\n}\n\n// =====================\n// Adaptive Learning\n// =====================\nconst learnedOffset = Math.min(\n    Math.max(0, room.state.learned_overshoot || 0),\n    2.0\n);\n\n// =====================\n// Entscheidungslogik\n// =====================\nlet nextState = room.state.heating || \"off\";\n\n// Fenster Hybrid\nif (d.windowOpen) {\n    if (!room.state.window_open_since) {\n        room.state.window_open_since = now.getTime();\n    }\n\n    const openForMs = now.getTime() - room.state.window_open_since;\n\n    if (openForMs >= WINDOW_GRACE_MS) {\n        nextState = \"off\";\n        reason = \"window_open\";\n    } else {\n        reason = \"window_open_grace\";\n    }\n} else {\n    room.state.window_open_since = null;\n\n    if (hasExternalSensors) {\n        if (currentVal < (target - hyst)) {\n            nextState = \"heat\";\n            reason = `heating_to_${target}`;\n        } else {\n            const stopThreshold = room.adaptive_learning\n                ? (target - learnedOffset)\n                : (target + hyst);\n\n            if (currentVal > stopThreshold) {\n                nextState = \"off\";\n                reason = room.adaptive_learning\n                    ? `adaptive_stop_at_${stopThreshold.toFixed(1)}`\n                    : `stop_above_${target + hyst}`;\n            } else {\n                reason = \"within_hysteresis\";\n            }\n        }\n    } else {\n        // Classic Thermostat Mode\n        if (temp < (target - hyst)) {\n            nextState = \"heat\";\n            reason = `heating_to_${target}_classic`;\n        } else if (temp > (target + hyst)) {\n            nextState = \"off\";\n            reason = `stop_above_${target}_classic`;\n        } else {\n            reason = \"within_hysteresis_classic\";\n        }\n    }\n}\n\n// =====================\n// Output\n// =====================\nmsg.payload = {\n    roomId: d.roomId,\n    heater_entity: room.heater_entity,\n    value: currentVal,\n    target,\n    nextState,\n    currentState: room.state.heating,\n    changed: nextState !== room.state.heating,\n    reason,\n    manual_override: manualOverride,\n    adaptive: room.adaptive_learning,\n    has_external_sensors: hasExternalSensors,\n    ts: now.getTime()\n};\n\nnode.status({\n    fill: nextState === \"heat\" ? \"red\" : \"grey\",\n    shape: \"dot\",\n    text: `${currentVal} → ${target} (${reason})`\n});\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1190,
+        "y": 200,
+        "wires": [
+            [
+                "2cef172efd4767db"
+            ]
+        ]
+    },
+    {
+        "id": "2cef172efd4767db",
+        "type": "function",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Output Dispatcher",
+        "func": "const res = msg.payload;\n\n// --- Home Assistant ---\nlet outHA = null;\nif (res.changed) {\n    outHA = {\n        payload: {\n            action: `climate.${res.nextState === \"heat\" ? \"set_temperature\" : \"set_hvac_mode\"}`,\n            data: {\n                entity_id: res.heater_entity,\n                ...(res.nextState === \"heat\"\n                    ? { temperature: 30, hvac_mode: \"heat\" }\n                    : { hvac_mode: \"off\" })\n            }\n        }\n    };\n}\n\n// --- Store ---\nconst outStore = {\n    action: \"UPDATE_ROOM_STATE\",\n    payload: {\n        roomId: res.roomId,\n        state: {\n            heating: res.nextState,\n            target: res.target,\n            lastReason: res.reason,\n            manual_override: res.manual_override\n        }\n    }\n};\n\n// --- Learning ---\nconst outLearn = { payload: res };\n\n// --- MQTT ---\nconst outMqtt = {\n    topic: `heating/${res.roomId}/state`,\n    payload: {\n        active: res.nextState === \"heat\",\n        target: res.target,\n        value: res.value,\n        reason: res.reason,\n        manual_override: res.manual_override,\n        adaptive: res.adaptive,\n        sensors: res.has_external_sensors ? \"humidex\" : \"classic\",\n        ts: res.ts\n    }\n};\n\nreturn [outHA, outStore, outLearn, outMqtt];",
+        "outputs": 4,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1450,
+        "y": 200,
+        "wires": [
+            [
+                "90b9720699c36d3e"
+            ],
+            [
+                "d8c73eb35aa5a6d1"
+            ],
+            [
+                "ca315fed11fa27f6"
+            ],
+            [
+                "48f728d371ba344c"
+            ]
+        ]
+    },
+    {
+        "id": "ca315fed11fa27f6",
+        "type": "function",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Overshoot Tracker",
+        "func": "const res = msg.payload;\nconst roomId = res.roomId;\nconst store = flow.get('heating_store');\nif (!store || !store.rooms[roomId]) return null;\nconst room = store.rooms[roomId];\n\nif (!room.adaptive_learning) return null;\n\nif (res.changed && res.nextState === \"off\" && !res.reason.includes(\"window\")) {\n    room.state.last_stop_val = res.humidex;\n    room.state.peak_after_stop = res.humidex;\n    flow.set('heating_store', store);\n}\n\nif (res.currentState === \"off\" && room.state.last_stop_val) {\n    if (res.humidex > room.state.peak_after_stop) room.state.peak_after_stop = res.humidex;\n    const overshoot = Math.max(0, room.state.peak_after_stop - room.state.last_stop_val);\n    if (overshoot < 3.0) {\n        const old = room.state.learned_overshoot || 0;\n        room.state.learned_overshoot = Math.round(((old * 0.9) + (overshoot * 0.1)) * 10) / 10;\n        flow.set('heating_store', store);\n    }\n}\n\nif (res.nextState === \"heat\") {\n    room.state.last_stop_val = null;\n    flow.set('heating_store', store);\n}\nreturn null;",
+        "outputs": 1,
+        "x": 970,
+        "y": 320,
+        "wires": [
+            [
+                "d8c73eb35aa5a6d1"
+            ]
+        ]
+    },
+    {
+        "id": "90b9720699c36d3e",
+        "type": "api-call-service",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Set HA",
+        "server": "f661c5bc79190e5c",
+        "version": 7,
+        "action": "{{payload.action}}",
+        "data": "{\t    \"temperature\": $number(payload.data.temperature),\t    \"hvac_mode\": payload.data.hvac_mode\t}",
+        "dataType": "jsonata",
+        "x": 1680,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d2db93825aa5db8c",
+        "type": "inject",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Tick",
+        "props": [
+            {
+                "p": "action",
+                "v": "TICK",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "x": 70,
+        "y": 200,
+        "wires": [
+            [
+                "d8c73eb35aa5a6d1"
+            ]
+        ]
+    },
+    {
+        "id": "24db3734eb9f80fc",
+        "type": "inject",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Dump",
+        "props": [
+            {
+                "p": "action",
+                "v": "DUMP_STORE",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 70,
+        "y": 320,
+        "wires": [
+            [
+                "d8c73eb35aa5a6d1"
+            ]
+        ]
+    },
+    {
+        "id": "48f728d371ba344c",
+        "type": "mqtt out",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "",
+        "topic": "",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "0a2aea2912b9b9ea",
+        "x": 1570,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "7c548f68967358f7",
+        "type": "server-state-changed",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Window State",
+        "server": "f661c5bc79190e5c",
+        "version": 6,
+        "outputs": 1,
+        "exposeAsEntityConfig": "",
+        "entities": {
+            "entity": [
+                "binary_sensor.zb_window_schlafzimmer_contact",
+                "binary_sensor.zb_window_office_contact",
+                "binary_sensor.zb_window_kinderzimmer_contact",
+                "binary_sensor.zb_window_bad_contact",
+                "binary_sensor.zb_window_stairs_contact"
+            ],
+            "substring": [],
+            "regex": []
+        },
+        "outputInitially": false,
+        "stateType": "str",
+        "ifState": "",
+        "ifStateType": "str",
+        "ifStateOperator": "is",
+        "outputOnlyOnStateChange": true,
+        "for": "0",
+        "forType": "num",
+        "forUnits": "minutes",
+        "ignorePrevStateNull": false,
+        "ignorePrevStateUnknown": false,
+        "ignorePrevStateUnavailable": false,
+        "ignoreCurrentStateUnknown": false,
+        "ignoreCurrentStateUnavailable": false,
+        "outputProperties": [
+            {
+                "property": "payload",
+                "propertyType": "msg",
+                "value": "string",
+                "valueType": "entityState"
+            },
+            {
+                "property": "data",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "eventData"
+            },
+            {
+                "property": "topic",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "triggerId"
+            }
+        ],
+        "x": 90,
+        "y": 380,
+        "wires": [
+            [
+                "b5c4e83be67a8d44"
+            ]
+        ]
+    },
+    {
+        "id": "1d8a23cfd43a4aad",
+        "type": "server-state-changed",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Heating State (Manual Override)",
+        "server": "f661c5bc79190e5c",
+        "version": 6,
+        "outputs": 1,
+        "exposeAsEntityConfig": "",
+        "entities": {
+            "entity": [
+                "climate.zb_thermos_children",
+                "climate.zb_thermos_sz",
+                "climate.zb_thermos_bad"
+            ],
+            "substring": [],
+            "regex": []
+        },
+        "outputInitially": false,
+        "stateType": "str",
+        "ifState": "",
+        "ifStateType": "str",
+        "ifStateOperator": "is",
+        "outputOnlyOnStateChange": true,
+        "for": "0",
+        "forType": "num",
+        "forUnits": "minutes",
+        "ignorePrevStateNull": false,
+        "ignorePrevStateUnknown": false,
+        "ignorePrevStateUnavailable": false,
+        "ignoreCurrentStateUnknown": false,
+        "ignoreCurrentStateUnavailable": false,
+        "outputProperties": [
+            {
+                "property": "payload",
+                "propertyType": "msg",
+                "value": "string",
+                "valueType": "entityState"
+            },
+            {
+                "property": "data",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "eventData"
+            },
+            {
+                "property": "topic",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "triggerId"
+            }
+        ],
+        "x": 150,
+        "y": 440,
+        "wires": [
+            [
+                "b5c4e83be67a8d44"
+            ]
+        ]
+    },
+    {
+        "id": "b5c4e83be67a8d44",
+        "type": "function",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Event Messenger",
+        "func": "// =====================\n// Event Processor Node\n// =====================\n\nconst store = flow.get('heating_store');\nif (!store) {\n    node.error('Store nicht initialisiert!');\n    return null;\n}\n\nconst ROOM_LOOKUP = flow.get('room_by_heater') || {};\n\nconst now = new Date();\nconst WINDOW_GRACE_MS = 2 * 60 * 1000; // 2 Minuten Fenster-Entprellung\n\n// --- Hilfsfunktionen ---\nfunction getRoomId(entityId) {\n    return ROOM_LOOKUP[entityId] || null;\n}\n\nfunction updateWindowState(room, isOpen) {\n    if (isOpen) {\n        if (!room.state.window_open_since) {\n            room.state.window_open_since = now.getTime();\n        }\n        const openForMs = now.getTime() - room.state.window_open_since;\n        return openForMs >= WINDOW_GRACE_MS;\n    } else {\n        room.state.window_open_since = null;\n        return false;\n    }\n}\n\nfunction markManualOverride(room) {\n    room.state.manual_override_active = true;\n    room.state.last_manual_override = now.toISOString();\n}\n\n// --- Event Verarbeitung ---\nconst event = msg.payload;\nlet roomId = getRoomId(event.data.entity_id);\n\nif (!roomId) {\n    node.warn(`Kein Raum für Entity ${event.data.entity_id} gefunden`);\n    return null;\n}\n\nconst room = store.rooms[roomId];\n\n// --- Fenster Events ---\nif (event.topic.startsWith('binary_sensor.')) {\n    const windowOpen = event.payload === 'on';\n    const shouldStopHeating = updateWindowState(room, windowOpen);\n\n    const payload = {\n        roomId,\n        state: {\n            heating: shouldStopHeating ? 'off' : room.state.heating,\n        },\n        reason: shouldStopHeating ? 'window_open' : 'window_open_grace'\n    };\n    return [{ action: 'UPDATE_ROOM_STATE', payload }, null];\n}\n\n// --- Klima Events ---\nif (event.topic.startsWith('climate.')) {\n    const manualTemp = event.payload === 'heat' ? 30 : 5;\n    markManualOverride(room);\n\n    const payload = {\n        roomId,\n        state: {\n            manual_setpoint: manualTemp,\n            // ggf. auch aktuelle Heizungsstate aktualisieren, wenn relevant\n        },\n        reason: 'manual_override'\n    };\n    return [{ action: 'UPDATE_ROOM_STATE', payload }, null];\n}\n\n// --- Andere Events können hier ergänzt werden ---\n\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 360,
+        "wires": [
+            [
+                "d8c73eb35aa5a6d1",
+                "95213e71e5df5e7d"
+            ]
+        ]
+    },
+    {
+        "id": "95213e71e5df5e7d",
+        "type": "debug",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 620,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "f661c5bc79190e5c",
+        "type": "server",
+        "name": "Home Assistant",
+        "version": 6,
+        "addon": false,
+        "rejectUnauthorizedCerts": true,
+        "ha_boolean": [
+            "y",
+            "yes",
+            "true",
+            "on",
+            "home",
+            "open"
+        ],
+        "connectionDelay": true,
+        "cacheJson": true,
+        "heartbeat": false,
+        "heartbeatInterval": 30,
+        "areaSelector": "friendlyName",
+        "deviceSelector": "friendlyName",
+        "entitySelector": "friendlyName",
+        "statusSeparator": ": ",
+        "statusYear": "hidden",
+        "statusMonth": "short",
+        "statusDay": "numeric",
+        "statusHourCycle": "default",
+        "statusTimeFormat": "h:m",
+        "enableGlobalContextStore": false
+    },
+    {
+        "id": "0a2aea2912b9b9ea",
+        "type": "mqtt-broker",
+        "name": "mosquitto",
+        "broker": "192.168.0.207",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "bd65e8be7fe1d2e9",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-contrib-home-assistant-websocket": "0.80.3"
+        }
+    }
+]
