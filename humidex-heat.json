@@ -27,7 +27,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "{\"default_schedules\":{\"weekday\":{\"humidex_target\":17,\"humidex_hysteresis\":1},\"weekend\":{\"humidex_target\":18,\"humidex_hysteresis\":1}},\"rooms\":{\"schlafzimmer\":{\"adaptive_learning\":false,\"schedules\":[{\"start\":\"21:00\",\"end\":\"23:59\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":22,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_sz\",\"temp_sensor\":\"sensor.zb_thermo_parents_temperature\",\"humidity_sensor\":\"sensor.zb_thermo_parents_humidity\",\"window_sensor\":\"binary_sensor.zb_window_schlafzimmer_contact\"},\"kinderzimmer\":{\"adaptive_learning\":true,\"schedules\":[{\"start\":\"06:00\",\"end\":\"08:00\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":21,\"humidex_hysteresis\":1},{\"start\":\"18:00\",\"end\":\"23:00\",\"days\":[1,2,3,4,5,6,0],\"humidex_target\":22,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_children\",\"temp_sensor\":\"sensor.zb_thermo_children_temperature\",\"humidity_sensor\":\"sensor.zb_thermo_children_humidity\",\"window_sensor\":\"binary_sensor.zb_window_kinderzimmer_contact\"},\"Bad\":{\"adaptive_learning\":true,\"schedules\":[{\"start\":\"06:00\",\"end\":\"08:00\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":21,\"humidex_hysteresis\":1},{\"start\":\"17:00\",\"end\":\"21:00\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":21,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_bad\",\"temp_sensor\":null,\"humidity_sensor\":null,\"window_sensor\":\"binary_sensor.zb_window_bad_contact\"},\"Spielzimmer\":{\"adaptive_learning\":true,\"schedules\":[{\"start\":\"14:00\",\"end\":\"19:00\",\"days\":[0,1,2,3,4],\"humidex_target\":22,\"humidex_hysteresis\":1},{\"start\":\"14:00\",\"end\":\"19:00\",\"days\":[5,6],\"humidex_target\":22,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_play\",\"temp_sensor\":\"sensor.zb_thermo_office_temperature\",\"humidity_sensor\":\"sensor.zb_thermo_office_humidity\",\"window_sensor\":\"binary_sensor.zb_window_office_contact\"}}}",
+        "payload": "{\"default_schedules\":{\"weekday\":{\"humidex_target\":17,\"humidex_hysteresis\":1},\"weekend\":{\"humidex_target\":18,\"humidex_hysteresis\":1}},\"rooms\":{\"schlafzimmer\":{\"adaptive_learning\":false,\"schedules\":[{\"start\":\"21:00\",\"end\":\"23:59\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":22,\"humidex_hysteresis\":1},{\"start\":\"08:04\",\"end\":\"08:30\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":22,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_sz\",\"temp_sensor\":\"sensor.zb_thermo_parents_temperature\",\"humidity_sensor\":\"sensor.zb_thermo_parents_humidity\",\"window_sensor\":\"binary_sensor.zb_window_schlafzimmer_contact\"},\"kinderzimmer\":{\"adaptive_learning\":true,\"schedules\":[{\"start\":\"06:00\",\"end\":\"08:00\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":21,\"humidex_hysteresis\":1},{\"start\":\"18:00\",\"end\":\"23:00\",\"days\":[1,2,3,4,5,6,0],\"humidex_target\":22,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_children\",\"temp_sensor\":\"sensor.zb_thermo_children_temperature\",\"humidity_sensor\":\"sensor.zb_thermo_children_humidity\",\"window_sensor\":\"binary_sensor.zb_window_kinderzimmer_contact\"},\"Bad\":{\"adaptive_learning\":true,\"schedules\":[{\"start\":\"06:00\",\"end\":\"08:00\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":21,\"humidex_hysteresis\":1},{\"start\":\"17:00\",\"end\":\"21:00\",\"days\":[0,1,2,3,4,5,6],\"humidex_target\":21,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_bad\",\"temp_sensor\":\"number.zb_thermos_bad_external_temperature_input\",\"humidity_sensor\":null,\"window_sensor\":\"binary_sensor.zb_window_bad_contact\"},\"Spielzimmer\":{\"adaptive_learning\":true,\"schedules\":[{\"start\":\"14:00\",\"end\":\"19:00\",\"days\":[0,1,2,3,4],\"humidex_target\":22,\"humidex_hysteresis\":1},{\"start\":\"14:00\",\"end\":\"19:00\",\"days\":[5,6],\"humidex_target\":22,\"humidex_hysteresis\":1}],\"heater_entity\":\"climate.zb_thermos_play\",\"temp_sensor\":\"sensor.zb_thermo_office_temperature\",\"humidity_sensor\":\"sensor.zb_thermo_office_humidity\",\"window_sensor\":\"binary_sensor.zb_window_office_contact\"}}}",
         "payloadType": "json",
         "x": 90,
         "y": 260,
@@ -42,19 +42,21 @@
         "type": "function",
         "z": "fcf1a8e2d668cc6b",
         "name": "Store API",
-        "func": "const STORE_KEY = 'heating_store';\nconst ROOM_LOOKUP_KEY = \"room_by_heater\";\n\nconst ACTION = msg.action || 'INIT';\nconst payload = msg.payload || {};\n\nfunction now() { return new Date().toISOString(); }\n\nfunction updateLookup(store) {\n    const lookup = {};\n    for (const [roomId, room] of Object.entries(store.rooms)) {\n        if (room.heater_entity) lookup[room.heater_entity] = roomId;\n        if (room.temp_sensor) lookup[room.temp_sensor] = roomId;\n        if (room.humidity_sensor) lookup[room.humidity_sensor] = roomId;\n        if (room.window_sensor) lookup[room.window_sensor] = roomId;\n    }\n    flow.set(ROOM_LOOKUP_KEY, lookup);\n}\n\nswitch (ACTION) {\n    case 'INIT':\n        for (const room of Object.values(payload.rooms)) {\n            if (!room.state) {\n                room.state = { \n                    heating: 'off', \n                    toggles: 0, \n                    learned_overshoot: 0, \n                    lastChange: now(),\n                    window_open_since: null,\n                    manual_override: null\n                };\n            }\n        }\n        flow.set(STORE_KEY, payload);\n        updateLookup(payload);\n        node.status({fill:\"green\",shape:\"dot\",text:\"Store Ready\"});\n        break;\n\n    case 'UPDATE_ROOM_STATE':\n        const store = flow.get(STORE_KEY);\n        if (store && store.rooms[payload.roomId]) {\n            const room = store.rooms[payload.roomId];\n            if (room.state.heating !== payload.state.heating) {\n                room.state.toggles++;\n            }\n            room.state = { ...room.state, ...payload.state, lastChange: now() };\n            flow.set(STORE_KEY, store);\n        }\n        break;\n\n    case 'EVENT_MESSAGE':\n        // payload: { entityId, type, value }\n        const storeEv = flow.get(STORE_KEY);\n        const lookup = flow.get(ROOM_LOOKUP_KEY);\n        if (!storeEv || !lookup) break;\n\n        const roomId = lookup[payload.entityId];\n        if (!roomId) break;\n\n        const roomEv = storeEv.rooms[roomId];\n        switch(payload.type) {\n            case 'window':\n                roomEv.state.window_open_since = payload.value === 'on' ? Date.now() : null;\n                break;\n            case 'manual_setpoint':\n                roomEv.state.manual_override = payload.value;\n                break;\n            default:\n                break;\n        }\n        flow.set(STORE_KEY, storeEv);\n        break;\n\n    case 'TICK':\n        const config = flow.get(STORE_KEY);\n        if (!config) return null;\n        const poll = [];\n        for (const [id, r] of Object.entries(config.rooms)) {\n            poll.push({ type: 'temperature', roomId: id, entityId: r.temp_sensor });\n            poll.push({ type: 'humidity', roomId: id, entityId: r.humidity_sensor });\n            poll.push({ type: 'window', roomId: id, entityId: r.window_sensor });\n            poll.push({ type: 'manual_setpoint', roomId: id, entityId: r.heater_entity });\n        }\n        return [null, { payload: poll }];\n\n    case 'DUMP_STORE':\n        node.warn(flow.get(STORE_KEY));\n        return null;\n}\n\nreturn [msg, null];",
+        "func": "const STORE_KEY = 'heating_store';\nconst ROOM_LOOKUP_KEY = \"room_by_heater\";\n\nconst ACTION = msg.action || 'INIT';\nconst payload = msg.payload || {};\nlet scheduleOut = [];\nfunction now() { return new Date().toISOString(); }\n\nfunction updateLookup(store) {\n    const lookup = {};\n    for (const [roomId, room] of Object.entries(store.rooms)) {\n        if (room.heater_entity) lookup[room.heater_entity] = roomId;\n        if (room.temp_sensor) lookup[room.temp_sensor] = roomId;\n        if (room.humidity_sensor) lookup[room.humidity_sensor] = roomId;\n        if (room.window_sensor) lookup[room.window_sensor] = roomId;\n    }\n    flow.set(ROOM_LOOKUP_KEY, lookup);\n}\nfunction validateConfig(payload) {\n    if (payload.length == 0) {\n        node.error('No Config given!', msg);\n    }\n\n    return true;\n}\nfunction getSchedulesByRoom(room) {\n\n}\n/**\n * Berechnet den effektiven Startzeitpunkt und korrigiert ggf. die Wochentage.\n * * @param {string} startTime - Format \"HH:mm\"\n * @param {number[]} days - Array von Wochentagen [0-6]\n * @param {number} offsetMinutes - Minuten, die abgezogen werden sollen\n * @returns {{hour: number, minute: number, days: number[], timeStr: string}}\n */\nfunction calculateEffectiveSchedule(startTime, days, offsetMinutes) {\n    const [h, m] = startTime.split(':').map(Number);\n    \n    const date = new Date();\n    date.setHours(h, m, 0, 0);\n    const originalDate = date.getDate();\n\n    // Zeit abziehen\n    date.setMinutes(date.getMinutes() - offsetMinutes);\n\n    const result = {\n        hour: date.getHours(),\n        minute: date.getMinutes(),\n        days: [...days],\n        timeStr: \"\"\n    };\n\n    // Datums-Shift korrigieren (Vortag-Problem)\n    if (date.getDate() !== originalDate) {\n        result.days = result.days.map(d => (d === 0 ? 6 : d - 1));\n    }\n\n    result.timeStr = `${String(result.hour).padStart(2, '0')}:${String(result.minute).padStart(2, '0')}`;\n    \n    return result;\n}\nfunction createDailyCronJobs() {\n    const config = flow.get(STORE_KEY);\n    if (!config || !config.rooms) return;\n\n    for (const [roomName, roomData] of Object.entries(config.rooms)) {\n        let scheduleId = 0;\n\n        for (const s of roomData.schedules) {\n            const [startHour, startMinute] = s.start.split(':');\n            const [endHour, endMinute] = s.end.split(':');\n\n            const scheduleDays = s.days.join(',');\n\n\n            if(roomData.adaptive_learning){\n                const offset = roomData.adaptive_learning ? 20 : 0; // 20 Min bei adaptive, sonst 0\n                const effectiveStart = calculateEffectiveSchedule(s.start, s.days, offset);\n                const preheatDays = effectiveStart.days.join(',');\n                \n                scheduleOut.push({\n                    \"payload\": {\n                        \"command\": \"add\",\n                        \"name\": `${roomName}_${scheduleId}_STARTPREHEAT_${effectiveStart.hour}_${effectiveStart.minute}`,\n                        \"expression\": `0 ${effectiveStart.minute} ${effectiveStart.hour} * * ${preheatDays}`,\n                        \"payload\": {\n                            \"action\": \"SCHEDULE_EVENT\",\n                            \"payload\": {\n                                \"roomId\": roomName,\n                                \"event\": \"START_PREHEAT\"\n                            }\n                        }\n                    }\n                });\n                scheduleOut.push({\n                    \"payload\": {\n                        \"command\": \"add\",\n                        \"name\": `${roomName}_${scheduleId}_ENDPREHEAT_${startHour}_${startMinute}`,\n                        \"expression\": `0 ${startMinute} ${startHour} * * ${preheatDays}`,\n                        \"payload\": {\n                            \"action\": \"SCHEDULE_EVENT\",\n                            \"payload\": {\n                                \"roomId\": roomName,\n                                \"event\": \"END_PREHEAT\"\n                            }\n                        }\n                    }\n                });\n            };\n            \n            scheduleOut.push({\n                \"payload\": {\n                    \"command\": \"add\",\n                    \"name\": `${roomName}_${scheduleId}_start_${startHour}_${startMinute}`,\n                    \"expression\": `0 ${startMinute} ${startHour} * * ${scheduleDays}`,\n                    \"payload\": {\n                        \"action\": \"SCHEDULE_EVENT\",\n                        \"payload\": {\n                            \"roomId\": roomName,\n                            \"event\": \"START_HEAT\"\n                        }\n                    }\n                }\n            });\n            \n            scheduleOut.push({\n                \"payload\": {\n                    \"command\": \"add\",\n                    \"name\": `${roomName}_${scheduleId}_end_${endHour}_${endMinute}`,\n                    \"expression\": `0 ${endMinute} ${endHour} * * ${scheduleDays}`,\n                    \"payload\": {\n                        \"action\": \"SCHEDULE_EVENT\",\n                        \"payload\": {\n                            \"roomId\": roomName,\n                            \"event\": \"STOP_HEAT\"\n                        }\n                    }\n\n                }\n            });\n            scheduleId = scheduleId + 1;\n        }\n    }\n}\nfunction resetScheduler(){\n    scheduleOut.push({\n        \"topic\": \"reset-all-dynamic\"\n    })\n}\nswitch (ACTION) {\n    case 'INIT':\n        validateConfig(payload);\n        for (const room of Object.values(payload.rooms)) {\n            if (!room.state) {\n                room.state = {\n                    heating: 'off',\n                    toggles: 0,\n                    learned_overshoot: 0,\n                    lastChange: now(),\n                    window_open_since: null,\n                    manual_override: null\n                };\n            }\n        }\n        flow.set(STORE_KEY, payload);\n        updateLookup(payload);\n        node.status({ fill: \"green\", shape: \"dot\", text: \"Store Ready\" });\n        break;\n\n    case 'UPDATE_ROOM_STATE':\n        const store = flow.get(STORE_KEY);\n        if (store && store.rooms[payload.roomId]) {\n            const room = store.rooms[payload.roomId];\n            if (room.state.heating !== payload.state.heating) {\n                room.state.toggles++;\n            }\n            room.state = { ...room.state, ...payload.state, lastChange: now() };\n            flow.set(STORE_KEY, store);\n        }\n        break;\n\n    case 'EVENT_MESSAGE':\n        // payload: { entityId, type, value }\n        const storeEv = flow.get(STORE_KEY);\n        const lookup = flow.get(ROOM_LOOKUP_KEY);\n        if (!storeEv || !lookup) break;\n\n        const roomId = lookup[payload.entityId];\n        if (!roomId) break;\n\n        const roomEv = storeEv.rooms[roomId];\n        switch (payload.type) {\n            case 'window':\n                roomEv.state.window_open_since = payload.value === 'on' ? Date.now() : null;\n                break;\n            case 'manual_setpoint':\n                roomEv.state.manual_override = payload.value;\n                break;\n            default:\n                break;\n        }\n        flow.set(STORE_KEY, storeEv);\n        break;\n    case \"RESCHEDULE\":\n        resetScheduler();\n        createDailyCronJobs();\n        break;\n    case 'TICK':\n        const config = flow.get(STORE_KEY);\n        if (!config) return null;\n        const poll = [];\n        for (const [id, r] of Object.entries(config.rooms)) {\n            poll.push({ type: 'temperature', roomId: id, entityId: r.temp_sensor });\n            if (r.humidity_sensor !== null) {\n                poll.push({ type: 'humidity', roomId: id, entityId: r.humidity_sensor });\n            }\n            poll.push({ type: 'manual_setpoint', roomId: id, entityId: r.heater_entity });\n        }\n        return [null, { payload: poll }];\n\n    case 'DUMP_STORE':\n        node.warn(flow.get(STORE_KEY));\n        return null;\n        break;\n    case 'SCHEDULE_EVENT': {\n        // payload: { roomId, event }\n        const store = flow.get(STORE_KEY);\n        if (!store) break;\n\n        const room = store.rooms[payload.roomId];\n        if (!room) break;\n\n        let outEvent = null;\n\n        switch (payload.event) {\n            case 'START_HEAT':\n                room.state.heating = 'on';\n                room.state.manual_override = null;\n                room.state.lastChange = now();\n\n                outEvent = {\n                    action: 'HEAT_ON',\n                    payload: {\n                        roomId: payload.roomId,\n                        mode: 'normal'\n                    }\n                };\n                break;\n\n            case 'START_HEAT_WITH_PREHEAT':\n                room.state.heating = 'preheat';\n                room.state.lastChange = now();\n\n                outEvent = {\n                    action: 'HEAT_ON',\n                    payload: {\n                        roomId: payload.roomId,\n                        mode: 'preheat'\n                    }\n                };\n                break;\n\n            case 'END_HEAT':\n                room.state.heating = 'off';\n                room.state.lastChange = now();\n\n                outEvent = {\n                    action: 'HEAT_OFF',\n                    payload: {\n                        roomId: payload.roomId\n                    }\n                };\n                break;\n        }\n\n        flow.set(STORE_KEY, store);\n\n        if (outEvent) {\n            return [outEvent, null];\n        }\n        break;\n    }\n\n}\n\nreturn [msg, scheduleOut];",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 310,
-        "y": 200,
+        "x": 320,
+        "y": 160,
         "wires": [
-            [],
             [
                 "fa235bb0d7dce24a"
+            ],
+            [
+                "017033ef99169a07"
             ]
         ]
     },
@@ -63,10 +65,15 @@
         "type": "function",
         "z": "fcf1a8e2d668cc6b",
         "name": "Message Dispatcher",
-        "func": "const messages = msg.payload;\nreturn [\n    messages.filter(m => m.type === 'temperature'),\n    messages.filter(m => m.type === 'humidity'),\n    messages.filter(m => m.type === 'window'),\n    messages.filter(m => m.type === 'manual_setpoint')\n];",
-        "outputs": 4,
-        "x": 520,
-        "y": 140,
+        "func": "const messages = Array.isArray(msg.payload) ? msg.payload : [msg.payload];\n\nfunction isEvent(m) {\n    // Scheduler-Events\n    if (m.action === 'SCHEDULE_EVENT') return true;\n\n    // Event-Messenger (window / manual)\n    if (m.type === 'window' || m.type === 'manual_setpoint') return true;\n\n    return false;\n}\n\nconst temperature = [];\nconst humidity = [];\nconst events = [];\n\nfor (const m of messages) {\n    if (!m || !m.type && !m.action) continue;\n\n    if (m.type === 'temperature') {\n        temperature.push(m);\n        continue;\n    }\n\n    if (m.type === 'humidity') {\n        humidity.push(m);\n        continue;\n    }\n\n    if (isEvent(m)) {\n        events.push(m);\n        continue;\n    }\n}\n\n// Status nur zur Beruhigung des Menschen\nnode.status({\n    fill: events.length ? \"yellow\" : \"green\",\n    shape: \"dot\",\n    text: `T:${temperature.length} H:${humidity.length} E:${events.length}`\n});\n\nreturn [\n    temperature.length ? temperature : null,\n    humidity.length ? humidity : null,\n    events.length ? events : null\n];",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 580,
+        "y": 120,
         "wires": [
             [
                 "cec9d2d182875986"
@@ -75,10 +82,7 @@
                 "1e1892601b3a3e30"
             ],
             [
-                "bef394a04d37e90a"
-            ],
-            [
-                "1f5c0997150847bf"
+                "ad13caeeafb35d6c"
             ]
         ]
     },
@@ -105,8 +109,8 @@
         ],
         "for": "",
         "forType": "num",
-        "x": 740,
-        "y": 80,
+        "x": 780,
+        "y": 20,
         "wires": [
             [
                 "0d8cd1fd0c26ff2a"
@@ -136,70 +140,8 @@
         ],
         "for": "",
         "forType": "num",
-        "x": 740,
-        "y": 130,
-        "wires": [
-            [
-                "0d8cd1fd0c26ff2a"
-            ]
-        ]
-    },
-    {
-        "id": "bef394a04d37e90a",
-        "type": "api-current-state",
-        "z": "fcf1a8e2d668cc6b",
-        "name": "Poll Window",
-        "server": "f661c5bc79190e5c",
-        "version": 3,
-        "outputs": 1,
-        "halt_if": "",
-        "halt_if_type": "str",
-        "entity_id": "{{entityId}}",
-        "state_type": "str",
-        "blockInputOverrides": false,
-        "outputProperties": [
-            {
-                "property": "payload",
-                "propertyType": "msg",
-                "value": "string",
-                "valueType": "entityState"
-            }
-        ],
-        "for": "",
-        "forType": "num",
-        "x": 740,
-        "y": 180,
-        "wires": [
-            [
-                "0d8cd1fd0c26ff2a"
-            ]
-        ]
-    },
-    {
-        "id": "1f5c0997150847bf",
-        "type": "api-current-state",
-        "z": "fcf1a8e2d668cc6b",
-        "name": "Poll Manual",
-        "server": "f661c5bc79190e5c",
-        "version": 3,
-        "outputs": 1,
-        "halt_if": "",
-        "halt_if_type": "str",
-        "entity_id": "{{entityId}}",
-        "state_type": "str",
-        "blockInputOverrides": false,
-        "outputProperties": [
-            {
-                "property": "payload",
-                "propertyType": "msg",
-                "value": "string",
-                "valueType": "entityState"
-            }
-        ],
-        "for": "",
-        "forType": "num",
-        "x": 740,
-        "y": 230,
+        "x": 780,
+        "y": 80,
         "wires": [
             [
                 "0d8cd1fd0c26ff2a"
@@ -211,10 +153,15 @@
         "type": "function",
         "z": "fcf1a8e2d668cc6b",
         "name": "Smart Normalizer",
-        "func": "const roomId = msg.roomId;\nconst type = msg.type;\nlet val = msg.payload;\n\nlet store = flow.get('heating_store');\nif (!store || !store.rooms[roomId]) return null;\n\nif (type === 'window') val = (val === 'on' || val === 'open');\nelse val = parseFloat(val);\n\nstore.rooms[roomId].state[type] = val;\nstore.rooms[roomId].state.lastUpdate = new Date().toISOString();\nflow.set('heating_store', store);\n\nconst st = store.rooms[roomId].state;\nif (st.temperature !== undefined && st.humidity !== undefined) {\n    msg.payload = {\n        roomId: roomId,\n        temperature: st.temperature,\n        humidity: st.humidity,\n        windowOpen: st.window || false,\n        manual_setpoint: st.manual_setpoint,\n        config: store.rooms[roomId],\n        default_schedules: store.default_schedules\n    };\n    return msg;\n}\nreturn null;",
+        "func": "const roomId = msg.roomId;\nconst type = msg.type;\nlet val = msg.payload;\n\nlet store = flow.get('heating_store');\nif (!store || !store.rooms[roomId]) return null;\n\nconst room = store.rooms[roomId];\n\n// Wert-Normalisierung\nif (type === 'window') {\n    // Erkennt 'on', 'open' oder true als offen\n    val = (val === 'on' || val === 'open' || val === true);\n} else {\n    val = parseFloat(val);\n}\n\n// State im Store aktualisieren\nroom.state[type] = val;\nroom.state.lastUpdate = new Date().toISOString();\nflow.set('heating_store', store);\n\nconst st = room.state;\n\n// VALIDIERUNG: Wann darf die Nachricht zum Controller?\n// Wir lassen sie durch, wenn Temperatur vorhanden ist. \n// Humidity ist optional (für Räume wie dein Bad).\nif (st.temperature !== undefined && st.temperature !== null) {\n\n    msg.payload = {\n        roomId: roomId,\n        temperature: st.temperature,\n        humidity: st.humidity || null, // Fallback für Räume ohne Hum-Sensor\n        // WICHTIG: Korrekte Prüfung auf deinen Store-Key 'window_open_since'\n        windowOpen: !!st.window_open_since,\n        manual_setpoint: st.manual_setpoint || null,\n        config: room,\n        default_schedules: store.default_schedules,\n        // Geben wir mit, ob es ein Tick oder ein Event war\n        trigger: msg.action || 'sensor_update'\n    };\n\n    return msg;\n}\n\nreturn null;",
         "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
         "x": 970,
-        "y": 200,
+        "y": 60,
         "wires": [
             [
                 "ad13caeeafb35d6c"
@@ -226,7 +173,7 @@
         "type": "function",
         "z": "fcf1a8e2d668cc6b",
         "name": "Heating Controller",
-        "func": "const d = msg.payload;\nconst room = d.config;\nconst now = new Date();\n\n// =====================\n// Konstanten\n// =====================\nconst WINDOW_GRACE_MS = 2 * 60 * 1000;\n\n// =====================\n// Sensor-Handling\n// =====================\nconst hasExternalSensors =\n    d.temperature !== null &&\n    d.temperature !== undefined &&\n    d.humidity !== null &&\n    d.humidity !== undefined;\n\nlet temp, hum, currentVal;\n\nif (hasExternalSensors) {\n    temp = d.temperature;\n    hum = d.humidity;\n\n    const dewPoint = temp - ((100 - hum) / 5);\n    const e = 6.112 * Math.pow(10, (7.5 * dewPoint) / (237.7 + dewPoint));\n    currentVal = Math.round((temp + 0.5555 * (e - 10)) * 10) / 10;\n} else {\n    temp = d.manual_setpoint; // Thermostat-eigener Wert\n    currentVal = temp;\n}\n\n// =====================\n// Zeit / Schedule\n// =====================\nconst currentDay = now.getDay();\nconst currentMin = now.getHours() * 60 + now.getMinutes();\n\nfunction getActiveSchedule() {\n    const parseT = (t) => {\n        const [h, m] = t.split(\":\").map(Number);\n        return h * 60 + m;\n    };\n\n    return (room.schedules || [])\n        .filter(s => {\n            if (!s.days.includes(currentDay)) return false;\n            const start = parseT(s.start);\n            const end = parseT(s.end);\n            return start < end\n                ? currentMin >= start && currentMin < end\n                : currentMin >= start || currentMin < end;\n        })\n        .sort((a, b) => b.humidex_target - a.humidex_target)[0] || null;\n}\n\nconst activeSched =\n    getActiveSchedule() ||\n    (currentDay % 6 === 0\n        ? d.default_schedules.weekend\n        : d.default_schedules.weekday);\n\nlet target = activeSched.humidex_target;\nconst hyst = activeSched.humidex_hysteresis || 1;\n\n// =====================\n// Manual Override\n// =====================\nconst manual = d.manual_setpoint;\nconst isControlCmd = manual === 30 || manual === 5;\n\nlet reason = \"schedule_active\";\nlet manualOverride = false;\n\nif (!isControlCmd && Math.abs(manual - target) > (hyst + 0.5)) {\n    target = manual;\n    reason = \"MANUAL_OVERRIDE\";\n    manualOverride = true;\n}\n\n// =====================\n// Adaptive Learning\n// =====================\nconst learnedOffset = Math.min(\n    Math.max(0, room.state.learned_overshoot || 0),\n    2.0\n);\n\n// =====================\n// Entscheidungslogik\n// =====================\nlet nextState = room.state.heating || \"off\";\n\n// Fenster Hybrid\nif (d.windowOpen) {\n    if (!room.state.window_open_since) {\n        room.state.window_open_since = now.getTime();\n    }\n\n    const openForMs = now.getTime() - room.state.window_open_since;\n\n    if (openForMs >= WINDOW_GRACE_MS) {\n        nextState = \"off\";\n        reason = \"window_open\";\n    } else {\n        reason = \"window_open_grace\";\n    }\n} else {\n    room.state.window_open_since = null;\n\n    if (hasExternalSensors) {\n        if (currentVal < (target - hyst)) {\n            nextState = \"heat\";\n            reason = `heating_to_${target}`;\n        } else {\n            const stopThreshold = room.adaptive_learning\n                ? (target - learnedOffset)\n                : (target + hyst);\n\n            if (currentVal > stopThreshold) {\n                nextState = \"off\";\n                reason = room.adaptive_learning\n                    ? `adaptive_stop_at_${stopThreshold.toFixed(1)}`\n                    : `stop_above_${target + hyst}`;\n            } else {\n                reason = \"within_hysteresis\";\n            }\n        }\n    } else {\n        // Classic Thermostat Mode\n        if (temp < (target - hyst)) {\n            nextState = \"heat\";\n            reason = `heating_to_${target}_classic`;\n        } else if (temp > (target + hyst)) {\n            nextState = \"off\";\n            reason = `stop_above_${target}_classic`;\n        } else {\n            reason = \"within_hysteresis_classic\";\n        }\n    }\n}\n\n// =====================\n// Output\n// =====================\nmsg.payload = {\n    roomId: d.roomId,\n    heater_entity: room.heater_entity,\n    value: currentVal,\n    target,\n    nextState,\n    currentState: room.state.heating,\n    changed: nextState !== room.state.heating,\n    reason,\n    manual_override: manualOverride,\n    adaptive: room.adaptive_learning,\n    has_external_sensors: hasExternalSensors,\n    ts: now.getTime()\n};\n\nnode.status({\n    fill: nextState === \"heat\" ? \"red\" : \"grey\",\n    shape: \"dot\",\n    text: `${currentVal} → ${target} (${reason})`\n});\n\nreturn msg;",
+        "func": "const d = msg.payload;\nconst room = d.config;\nconst now = new Date();\n\n// =====================\n// Konstanten\n// =====================\nconst WINDOW_GRACE_MS = 2 * 60 * 1000;\nconst PREHEAT_OFFSET = room.preheat_offset ?? 2.0;\n\n// =====================\n// EVENT MODE (höchste Priorität)\n// =====================\nif (msg.action === 'HEAT_ON' || msg.action === 'HEAT_OFF') {\n    let nextState = 'off';\n    let reason = msg.action;\n\n    if (msg.action === 'HEAT_ON') {\n        nextState = msg.payload?.mode === 'preheat' ? 'preheat' : 'heat';\n    }\n\n    msg.payload = {\n        roomId: msg.payload.roomId,\n        heater_entity: room.heater_entity,\n        nextState,\n        currentState: room.state.heating,\n        changed: nextState !== room.state.heating,\n        reason,\n        forced: true,\n        ts: Date.now()\n    };\n\n    node.status({\n        fill: nextState === 'off' ? 'grey' : 'red',\n        shape: 'ring',\n        text: `EVENT → ${nextState}`\n    });\n\n    return msg;\n}\n\n// =====================\n// Sensor-Handling\n// =====================\nconst hasExternalSensors =\n    d.temperature !== null &&\n    d.temperature !== undefined &&\n    d.humidity !== null &&\n    d.humidity !== undefined;\n\nlet temp, hum, currentVal;\n\nif (hasExternalSensors) {\n    temp = d.temperature;\n    hum = d.humidity;\n\n    const dewPoint = temp - ((100 - hum) / 5);\n    const e = 6.112 * Math.pow(10, (7.5 * dewPoint) / (237.7 + dewPoint));\n    currentVal = Math.round((temp + 0.5555 * (e - 10)) * 10) / 10;\n} else {\n    temp = d.manual_setpoint;\n    currentVal = temp;\n}\n\n// =====================\n// Zeit / Schedule\n// =====================\nconst currentDay = now.getDay();\nconst currentMin = now.getHours() * 60 + now.getMinutes();\n\nfunction getActiveSchedule() {\n    const parseT = (t) => {\n        const [h, m] = t.split(\":\").map(Number);\n        return h * 60 + m;\n    };\n\n    return (room.schedules || [])\n        .filter(s => {\n            if (!s.days.includes(currentDay)) return false;\n            const start = parseT(s.start);\n            const end = parseT(s.end);\n            return start < end\n                ? currentMin >= start && currentMin < end\n                : currentMin >= start || currentMin < end;\n        })\n        .sort((a, b) => b.humidex_target - a.humidex_target)[0] || null;\n}\n\nconst activeSched =\n    getActiveSchedule() ||\n    (currentDay % 6 === 0\n        ? d.default_schedules.weekend\n        : d.default_schedules.weekday);\n\nlet target = activeSched.humidex_target;\nconst hyst = activeSched.humidex_hysteresis || 1;\n\n// =====================\n// Preheat-Ziel\n// =====================\nconst isPreheatActive = room.state.heating === 'preheat';\nif (isPreheatActive) {\n    target += PREHEAT_OFFSET;\n}\n\n// =====================\n// Manual Override\n// =====================\nconst manual = d.manual_setpoint;\nconst isControlCmd = manual === 30 || manual === 5;\n\nlet reason = \"schedule_active\";\nlet manualOverride = false;\n\nif (!isControlCmd && Math.abs(manual - target) > (hyst + 0.5)) {\n    target = manual;\n    reason = \"MANUAL_OVERRIDE\";\n    manualOverride = true;\n}\n\n// =====================\n// Adaptive Learning\n// =====================\nconst learnedOffset = Math.min(\n    Math.max(0, room.state.learned_overshoot || 0),\n    2.0\n);\n\n// =====================\n// Entscheidungslogik\n// =====================\nlet nextState = room.state.heating || \"off\";\n\n// Fenster Hybrid\nif (d.windowOpen) {\n    if (!room.state.window_open_since) {\n        room.state.window_open_since = now.getTime();\n    }\n\n    const openForMs = now.getTime() - room.state.window_open_since;\n\n    if (openForMs >= WINDOW_GRACE_MS) {\n        nextState = \"off\";\n        reason = \"window_open\";\n    } else {\n        reason = \"window_open_grace\";\n    }\n} else {\n    room.state.window_open_since = null;\n\n    if (hasExternalSensors) {\n        if (currentVal < (target - hyst)) {\n            nextState = isPreheatActive ? \"preheat\" : \"heat\";\n            reason = `heating_to_${target}`;\n        } else {\n            const stopThreshold = room.adaptive_learning\n                ? (target - learnedOffset)\n                : (target + hyst);\n\n            if (currentVal > stopThreshold) {\n                nextState = \"off\";\n                reason = room.adaptive_learning\n                    ? `adaptive_stop_at_${stopThreshold.toFixed(1)}`\n                    : `stop_above_${target + hyst}`;\n            } else {\n                reason = \"within_hysteresis\";\n            }\n        }\n    } else {\n        if (temp < (target - hyst)) {\n            nextState = \"heat\";\n            reason = `heating_to_${target}_classic`;\n        } else if (temp > (target + hyst)) {\n            nextState = \"off\";\n            reason = `stop_above_${target}_classic`;\n        } else {\n            reason = \"within_hysteresis_classic\";\n        }\n    }\n}\n\n// =====================\n// 5-Minuten-Tick Sicherheitsnetz\n// =====================\nif (\n    d.tick === true &&\n    activeSched &&\n    nextState === \"off\" &&\n    room.state.heating === \"off\" &&\n    !d.windowOpen\n) {\n    nextState = isPreheatActive ? \"preheat\" : \"heat\";\n    reason = \"tick_schedule_correction\";\n}\n\n// =====================\n// Output\n// =====================\nmsg.payload = {\n    roomId: d.roomId,\n    heater_entity: room.heater_entity,\n    value: currentVal,\n    target,\n    nextState,\n    currentState: room.state.heating,\n    changed: nextState !== room.state.heating,\n    reason,\n    manual_override: manualOverride,\n    adaptive: room.adaptive_learning,\n    has_external_sensors: hasExternalSensors,\n    ts: now.getTime()\n};\n\nnode.status({\n    fill: nextState === \"heat\" || nextState === \"preheat\" ? \"red\" : \"grey\",\n    shape: \"dot\",\n    text: `${currentVal} → ${target} (${reason})`\n});\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -234,10 +181,11 @@
         "finalize": "",
         "libs": [],
         "x": 1190,
-        "y": 200,
+        "y": 180,
         "wires": [
             [
-                "2cef172efd4767db"
+                "2cef172efd4767db",
+                "6ab2c2a33f90274a"
             ]
         ]
     },
@@ -246,7 +194,7 @@
         "type": "function",
         "z": "fcf1a8e2d668cc6b",
         "name": "Output Dispatcher",
-        "func": "const res = msg.payload;\n\n// --- Home Assistant ---\nlet outHA = null;\nif (res.changed) {\n    outHA = {\n        payload: {\n            action: `climate.${res.nextState === \"heat\" ? \"set_temperature\" : \"set_hvac_mode\"}`,\n            data: {\n                entity_id: res.heater_entity,\n                ...(res.nextState === \"heat\"\n                    ? { temperature: 30, hvac_mode: \"heat\" }\n                    : { hvac_mode: \"off\" })\n            }\n        }\n    };\n}\n\n// --- Store ---\nconst outStore = {\n    action: \"UPDATE_ROOM_STATE\",\n    payload: {\n        roomId: res.roomId,\n        state: {\n            heating: res.nextState,\n            target: res.target,\n            lastReason: res.reason,\n            manual_override: res.manual_override\n        }\n    }\n};\n\n// --- Learning ---\nconst outLearn = { payload: res };\n\n// --- MQTT ---\nconst outMqtt = {\n    topic: `heating/${res.roomId}/state`,\n    payload: {\n        active: res.nextState === \"heat\",\n        target: res.target,\n        value: res.value,\n        reason: res.reason,\n        manual_override: res.manual_override,\n        adaptive: res.adaptive,\n        sensors: res.has_external_sensors ? \"humidex\" : \"classic\",\n        ts: res.ts\n    }\n};\n\nreturn [outHA, outStore, outLearn, outMqtt];",
+        "func": "const res = msg.payload;\n\n// --- Home Assistant ---\nlet outHA = null;\nif (res.changed) {\n    const isHeating = res.nextState === \"heat\" || res.nextState === \"preheat\";\n\n    outHA = {\n        payload: {\n            action: isHeating\n                ? \"climate.set_temperature\"\n                : \"climate.set_hvac_mode\",\n            data: {\n                entity_id: res.heater_entity,\n                ...(isHeating\n                    ? {\n                        temperature: res.nextState === \"preheat\" ? 30 : res.target,\n                        hvac_mode: \"heat\"\n                    }\n                    : { hvac_mode: \"off\" })\n            }\n        }\n    };\n}\n\n// --- Store ---\nconst outStore = {\n    action: \"UPDATE_ROOM_STATE\",\n    payload: {\n        roomId: res.roomId,\n        state: {\n            heating: res.nextState,\n            phase: res.nextState === \"preheat\" ? \"preheat\" : \"normal\",\n            target: res.target,\n            lastReason: res.reason,\n            manual_override: res.manual_override\n        }\n    }\n};\n\n// --- Learning ---\nconst outLearn = { payload: res };\n\n// --- MQTT ---\nconst outMqtt = {\n    topic: `heating/${res.roomId}/state`,\n    payload: {\n        active: res.nextState === \"heat\" || res.nextState === \"preheat\",\n        phase: res.nextState,\n        target: res.target,\n        value: res.value,\n        reason: res.reason,\n        manual_override: res.manual_override,\n        adaptive: res.adaptive,\n        sensors: res.has_external_sensors ? \"humidex\" : \"classic\",\n        ts: res.ts\n    }\n};\n\nreturn [outHA, outStore, outLearn, outMqtt];",
         "outputs": 4,
         "timeout": "",
         "noerr": 0,
@@ -292,37 +240,25 @@
         "name": "Set HA",
         "server": "f661c5bc79190e5c",
         "version": 7,
+        "debugenabled": false,
         "action": "{{payload.action}}",
+        "floorId": [],
+        "areaId": [],
+        "deviceId": [],
+        "entityId": [],
+        "labelId": [],
         "data": "{\t    \"temperature\": $number(payload.data.temperature),\t    \"hvac_mode\": payload.data.hvac_mode\t}",
         "dataType": "jsonata",
+        "mergeContext": "",
+        "mustacheAltTags": false,
+        "outputProperties": [],
+        "blockInputOverrides": false,
+        "domain": "{{payload",
+        "service": "action}}",
         "x": 1680,
         "y": 180,
         "wires": [
             []
-        ]
-    },
-    {
-        "id": "d2db93825aa5db8c",
-        "type": "inject",
-        "z": "fcf1a8e2d668cc6b",
-        "name": "Tick",
-        "props": [
-            {
-                "p": "action",
-                "v": "TICK",
-                "vt": "str"
-            }
-        ],
-        "repeat": "300",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "x": 70,
-        "y": 200,
-        "wires": [
-            [
-                "d8c73eb35aa5a6d1"
-            ]
         ]
     },
     {
@@ -357,15 +293,15 @@
         "name": "",
         "topic": "",
         "qos": "0",
-        "retain": "",
+        "retain": "true",
         "respTopic": "",
         "contentType": "",
         "userProps": "",
         "correl": "",
         "expiry": "",
         "broker": "0a2aea2912b9b9ea",
-        "x": 1570,
-        "y": 300,
+        "x": 1670,
+        "y": 240,
         "wires": []
     },
     {
@@ -378,15 +314,11 @@
         "outputs": 1,
         "exposeAsEntityConfig": "",
         "entities": {
-            "entity": [
-                "binary_sensor.zb_window_schlafzimmer_contact",
-                "binary_sensor.zb_window_office_contact",
-                "binary_sensor.zb_window_kinderzimmer_contact",
-                "binary_sensor.zb_window_bad_contact",
-                "binary_sensor.zb_window_stairs_contact"
-            ],
+            "entity": [],
             "substring": [],
-            "regex": []
+            "regex": [
+                "binary_sensor.zb_window.*_contact"
+            ]
         },
         "outputInitially": false,
         "stateType": "str",
@@ -420,10 +352,16 @@
                 "propertyType": "msg",
                 "value": "",
                 "valueType": "triggerId"
+            },
+            {
+                "property": "eventType",
+                "propertyType": "msg",
+                "value": "OVERRIDE_EVENT",
+                "valueType": "str"
             }
         ],
         "x": 90,
-        "y": 380,
+        "y": 520,
         "wires": [
             [
                 "b5c4e83be67a8d44"
@@ -440,13 +378,11 @@
         "outputs": 1,
         "exposeAsEntityConfig": "",
         "entities": {
-            "entity": [
-                "climate.zb_thermos_children",
-                "climate.zb_thermos_sz",
-                "climate.zb_thermos_bad"
-            ],
+            "entity": [],
             "substring": [],
-            "regex": []
+            "regex": [
+                "climate.zb_thermos.*"
+            ]
         },
         "outputInitially": false,
         "stateType": "str",
@@ -480,10 +416,130 @@
                 "propertyType": "msg",
                 "value": "",
                 "valueType": "triggerId"
+            },
+            {
+                "property": "eventType",
+                "propertyType": "msg",
+                "value": "OVERRIDE_EVENT",
+                "valueType": "str"
             }
         ],
         "x": 150,
-        "y": 440,
+        "y": 580,
+        "wires": [
+            [
+                "b5c4e83be67a8d44"
+            ]
+        ]
+    },
+    {
+        "id": "b8f0277bfa54a356",
+        "type": "cronplus",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Static Cron",
+        "outputField": "action",
+        "timeZone": "",
+        "storeName": "",
+        "commandResponseMsgOutput": "output1",
+        "defaultLocation": "",
+        "defaultLocationType": "default",
+        "outputs": 1,
+        "options": [
+            {
+                "name": "schedule1",
+                "topic": "topic1",
+                "payloadType": "str",
+                "payload": "TICK",
+                "expressionType": "cron",
+                "expression": "* */5 * * * * *",
+                "location": "",
+                "offset": "0",
+                "solarType": "all",
+                "solarEvents": "sunrise,sunset"
+            },
+            {
+                "name": "schedule2",
+                "topic": "topic2",
+                "payloadType": "str",
+                "payload": "RESCHEDULE",
+                "expressionType": "cron",
+                "expression": "0 0 0 * * * *",
+                "location": "",
+                "offset": "0",
+                "solarType": "all",
+                "solarEvents": "sunrise,sunset"
+            }
+        ],
+        "x": 110,
+        "y": 80,
+        "wires": [
+            [
+                "d8c73eb35aa5a6d1"
+            ]
+        ]
+    },
+    {
+        "id": "9564d8d5f31cff3b",
+        "type": "inject",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Window Open",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            },
+            {
+                "p": "eventType",
+                "v": "WINDOW_EVENT",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "binary_sensor.zb_window_schlafzimmer_contact",
+        "payload": "on",
+        "payloadType": "str",
+        "x": 90,
+        "y": 460,
+        "wires": [
+            [
+                "b5c4e83be67a8d44"
+            ]
+        ]
+    },
+    {
+        "id": "d7bfd15fd9b7e79d",
+        "type": "inject",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Window Close",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            },
+            {
+                "p": "eventType",
+                "v": "WINDOW_EVENT",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "binary_sensor.zb_window_schlafzimmer_contact",
+        "payload": "off",
+        "payloadType": "str",
+        "x": 90,
+        "y": 420,
         "wires": [
             [
                 "b5c4e83be67a8d44"
@@ -495,37 +551,119 @@
         "type": "function",
         "z": "fcf1a8e2d668cc6b",
         "name": "Event Messenger",
-        "func": "// =====================\n// Event Processor Node\n// =====================\n\nconst store = flow.get('heating_store');\nif (!store) {\n    node.error('Store nicht initialisiert!');\n    return null;\n}\n\nconst ROOM_LOOKUP = flow.get('room_by_heater') || {};\n\nconst now = new Date();\nconst WINDOW_GRACE_MS = 2 * 60 * 1000; // 2 Minuten Fenster-Entprellung\n\n// --- Hilfsfunktionen ---\nfunction getRoomId(entityId) {\n    return ROOM_LOOKUP[entityId] || null;\n}\n\nfunction updateWindowState(room, isOpen) {\n    if (isOpen) {\n        if (!room.state.window_open_since) {\n            room.state.window_open_since = now.getTime();\n        }\n        const openForMs = now.getTime() - room.state.window_open_since;\n        return openForMs >= WINDOW_GRACE_MS;\n    } else {\n        room.state.window_open_since = null;\n        return false;\n    }\n}\n\nfunction markManualOverride(room) {\n    room.state.manual_override_active = true;\n    room.state.last_manual_override = now.toISOString();\n}\n\n// --- Event Verarbeitung ---\nconst event = msg.payload;\nlet roomId = getRoomId(event.data.entity_id);\n\nif (!roomId) {\n    node.warn(`Kein Raum für Entity ${event.data.entity_id} gefunden`);\n    return null;\n}\n\nconst room = store.rooms[roomId];\n\n// --- Fenster Events ---\nif (event.topic.startsWith('binary_sensor.')) {\n    const windowOpen = event.payload === 'on';\n    const shouldStopHeating = updateWindowState(room, windowOpen);\n\n    const payload = {\n        roomId,\n        state: {\n            heating: shouldStopHeating ? 'off' : room.state.heating,\n        },\n        reason: shouldStopHeating ? 'window_open' : 'window_open_grace'\n    };\n    return [{ action: 'UPDATE_ROOM_STATE', payload }, null];\n}\n\n// --- Klima Events ---\nif (event.topic.startsWith('climate.')) {\n    const manualTemp = event.payload === 'heat' ? 30 : 5;\n    markManualOverride(room);\n\n    const payload = {\n        roomId,\n        state: {\n            manual_setpoint: manualTemp,\n            // ggf. auch aktuelle Heizungsstate aktualisieren, wenn relevant\n        },\n        reason: 'manual_override'\n    };\n    return [{ action: 'UPDATE_ROOM_STATE', payload }, null];\n}\n\n// --- Andere Events können hier ergänzt werden ---\n\nreturn null;",
+        "func": "// =====================\n// Event Processor Node\n// =====================\n\nconst store = flow.get('heating_store');\nif (!store) {\n    node.error('Store nicht initialisiert!');\n    return null;\n}\n\nconst ROOM_LOOKUP = flow.get('room_by_heater') || {};\nconst entityId = msg.topic;\nconst eventType = msg.eventType;\n\nnode.status({fill:\"red\",shape:\"ring\",text: eventType});\nconst now = new Date();\nconst WINDOW_GRACE_MS = 2 * 60 * 1000; // 2 Minuten Fenster-Entprellung\n\n// --- Hilfsfunktionen ---\nfunction getRoomId(entityId) {\n    return ROOM_LOOKUP[entityId] || null;\n}\n\nfunction updateWindowState(room, isOpen) {\n   \n    if (isOpen) {\n        if (!room.state.window_open_since) {\n            room.state.window_open_since = now.getTime();\n        }\n        const openForMs = now.getTime() - room.state.window_open_since;\n        return openForMs >= WINDOW_GRACE_MS;\n    } else {\n        room.state.window_open_since = null;\n        return false;\n    }\n}\n\nfunction markManualOverride(room) {\n    room.state.manual_override_active = true;\n    room.state.last_manual_override = now.toISOString();\n}\n\n// --- Event Verarbeitung ---\nconst event = msg.payload;\nlet roomId = getRoomId(entityId);\n\nif (!roomId) {\n    node.warn(`Kein Raum für Entity ${entityId} gefunden`);\n    return null;\n}\n\nconst room = store.rooms[roomId];\n\nswitch(eventType){\n    case 'WINDOW_EVENT':\n\n        const windowOpen = event === 'on';\n        const shouldStopHeating = updateWindowState(room, windowOpen);\n\n        const payload = {\n            roomId,\n            state: {\n                heating: shouldStopHeating ? 'off' : room.state.heating,\n                window_open_since: (new Date()).getTime(),\n            },\n            reason: shouldStopHeating ? 'window_open' : 'window_open_grace'\n        };\n        //node.warn(payload);\n        return [{ action: 'UPDATE_ROOM_STATE', payload }, null];\n    break;\n    case 'OVERRIDE_EVENT':\n        return null;\n    break;\n    default:\n        node.error(\"Unknown Event\", msg);\n}\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 330,
-        "y": 360,
+        "x": 490,
+        "y": 380,
         "wires": [
             [
                 "d8c73eb35aa5a6d1",
-                "95213e71e5df5e7d"
+                "e1e2a8de1faa615e"
             ]
         ]
     },
     {
-        "id": "95213e71e5df5e7d",
+        "id": "017033ef99169a07",
+        "type": "cronplus",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Scheduler",
+        "outputField": "payload",
+        "timeZone": "",
+        "storeName": "file",
+        "commandResponseMsgOutput": "output2",
+        "defaultLocation": "",
+        "defaultLocationType": "default",
+        "outputs": 2,
+        "options": [],
+        "x": 280,
+        "y": 20,
+        "wires": [
+            [
+                "e18cab03af7e1545"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "9f84bb295c901c62",
+        "type": "inject",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "reschedule",
+        "props": [
+            {
+                "p": "action",
+                "v": "RESCHEDULE",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 100,
+        "y": 200,
+        "wires": [
+            [
+                "d8c73eb35aa5a6d1"
+            ]
+        ]
+    },
+    {
+        "id": "e18cab03af7e1545",
+        "type": "function",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "Store Adapter",
+        "func": "if (!msg.payload?.config?.payload) return null;\n\n// Das ist der eigentliche Event\nconst eventMsg = msg.payload.config.payload;\n\n// cron-plus Payload nach oben ziehen\nmsg.action = eventMsg.action;\nmsg.payload = eventMsg.payload;\n\n// Optional: Topic setzen für Logging\nmsg.topic = msg.payload.roomId;\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 20,
+        "wires": [
+            [
+                "d8c73eb35aa5a6d1"
+            ]
+        ]
+    },
+    {
+        "id": "6ab2c2a33f90274a",
         "type": "debug",
         "z": "fcf1a8e2d668cc6b",
-        "name": "debug 1",
+        "name": "debug 2",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
+        "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 620,
-        "y": 360,
+        "x": 1300,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "e1e2a8de1faa615e",
+        "type": "debug",
+        "z": "fcf1a8e2d668cc6b",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 460,
         "wires": []
     },
     {
@@ -590,11 +728,12 @@
         "sessionExpiry": ""
     },
     {
-        "id": "bd65e8be7fe1d2e9",
+        "id": "baca1b95daec8d6f",
         "type": "global-config",
         "env": [],
         "modules": {
-            "node-red-contrib-home-assistant-websocket": "0.80.3"
+            "node-red-contrib-home-assistant-websocket": "0.80.3",
+            "node-red-contrib-cron-plus": "2.2.4"
         }
     }
 ]
