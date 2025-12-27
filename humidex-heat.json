@@ -619,7 +619,7 @@
         "type": "function",
         "z": "fcf1a8e2d668cc6b",
         "name": "Store Adapter",
-        "func": "if (!msg.payload?.config?.payload) return null;\n\n// Das ist der eigentliche Event\nconst eventMsg = msg.payload.config.payload;\n\n// cron-plus Payload nach oben ziehen\nmsg.action = eventMsg.action;\nmsg.payload = eventMsg.payload;\n\n// Optional: Topic setzen für Logging\nmsg.topic = msg.payload.roomId;\n\nreturn msg;\n",
+        "func": "if (!msg.payload?.config?.payload) return null;\n\n// Das ist der eigentliche Event\nconst eventMsg = msg.payload.config.payload;\n\n// cron-plus Payload nach oben ziehen\nmsg.action = eventMsg.action;\nmsg.payload = eventMsg.payload;\nmsg.eventType = 'SCHEDULE_EVENT';\n\n// Optional: Topic setzen für Logging\nmsg.topic = msg.payload.roomId;\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -630,7 +630,7 @@
         "y": 20,
         "wires": [
             [
-                "d8c73eb35aa5a6d1"
+                "b5c4e83be67a8d44"
             ]
         ]
     },

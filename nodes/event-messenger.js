@@ -42,10 +42,16 @@ function markManualOverride(room) {
 
 // --- Event Verarbeitung ---
 const event = msg.payload;
-let roomId = getRoomId(entityId);
+let roomId;
+
+if (eventType === 'SCHEDULE_EVENT') {
+    roomId = event.roomId;
+} else {
+    roomId = getRoomId(entityId);
+}
 
 if (!roomId) {
-    node.warn(`Kein Raum für Entity ${entityId} gefunden`);
+    node.warn(`Kein Raum für ${eventType === 'SCHEDULE_EVENT' ? 'Schedule' : 'Entity'} ${eventType === 'SCHEDULE_EVENT' ? event.roomId : entityId} gefunden`);
     return null;
 }
 
@@ -69,8 +75,28 @@ switch(eventType){
         return [{ action: 'UPDATE_ROOM_STATE', payload }, null];
     break;
     case 'OVERRIDE_EVENT':
-        return null;
+        // Handle manual override by setting manual_override in room state
+        room.state.manual_override = event;
+        room.state.last_manual_override = now.toISOString();
+        flow.set('heating_store', store);
+        return [{ action: 'UPDATE_ROOM_STATE', payload: { roomId, state: { manual_override: event } } }, null];
     break;
+    case 'SCHEDULE_EVENT':
+        // Process schedule events
+        const scheduleAction = event.event === 'START_HEAT' ? 'HEAT_ON' : 
+                              event.event === 'STOP_HEAT' ? 'HEAT_OFF' : 
+                              event.event === 'START_PREHEAT' ? 'HEAT_ON' : null;
+        
+        if (scheduleAction) {
+            return [{
+                action: scheduleAction,
+                payload: {
+                    roomId: event.roomId,
+                    mode: event.event === 'START_PREHEAT' ? 'preheat' : 'normal'
+                }
+            }, null];
+        }
+        break;
     default:
         node.error("Unknown Event", msg);
 }

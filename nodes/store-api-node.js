@@ -107,8 +107,6 @@ function createDailyCronJobs() {
                     }
                 });
             };
-
-            }
             
             scheduleOut.push({
                 "payload": {
@@ -224,65 +222,6 @@ switch (ACTION) {
         node.warn(flow.get(STORE_KEY));
         return null;
         break;
-    case 'SCHEDULE_EVENT': {
-        // payload: { roomId, event }
-        const store = flow.get(STORE_KEY);
-        if (!store) break;
-
-        const room = store.rooms[payload.roomId];
-        if (!room) break;
-
-        let outEvent = null;
-
-        switch (payload.event) {
-            case 'START_HEAT':
-                room.state.heating = 'on';
-                room.state.manual_override = null;
-                room.state.lastChange = now();
-
-                outEvent = {
-                    action: 'HEAT_ON',
-                    payload: {
-                        roomId: payload.roomId,
-                        mode: 'normal'
-                    }
-                };
-                break;
-
-            case 'START_HEAT_WITH_PREHEAT':
-                room.state.heating = 'preheat';
-                room.state.lastChange = now();
-
-                outEvent = {
-                    action: 'HEAT_ON',
-                    payload: {
-                        roomId: payload.roomId,
-                        mode: 'preheat'
-                    }
-                };
-                break;
-
-            case 'END_HEAT':
-                room.state.heating = 'off';
-                room.state.lastChange = now();
-
-                outEvent = {
-                    action: 'HEAT_OFF',
-                    payload: {
-                        roomId: payload.roomId
-                    }
-                };
-                break;
-        }
-
-        flow.set(STORE_KEY, store);
-
-        if (outEvent) {
-            return [outEvent, null];
-        }
-        break;
-    }
-
 }
 
 return [msg, scheduleOut];
